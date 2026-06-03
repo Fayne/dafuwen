@@ -1,0 +1,80 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Courier+Prime:wght@400;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --felt: #1a3a2a;
+  --felt-light: #234d38;
+  --gold: #c9a84c;
+  --gold-light: #e2c06a;
+  --ivory: #f5ead5;
+  --mahogany: #3d1c0e;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background-color: var(--mahogany);
+  background-image:
+    repeating-linear-gradient(45deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 1px, transparent 1px, transparent 8px),
+    repeating-linear-gradient(-45deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 1px, transparent 1px, transparent 8px);
+  min-height: 100vh;
+  font-family: 'Crimson Text', serif;
+  color: var(--ivory);
+}
+
+.felt-bg {
+  background-color: var(--felt);
+  background-image:
+    radial-gradient(ellipse at 20% 20%, rgba(255,255,255,0.03) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(0,0,0,0.2) 0%, transparent 60%);
+}
+
+.gold-border { border: 2px solid var(--gold); }
+.gold-border-thick { border: 3px solid var(--gold); }
+
+.btn-gold {
+  background: linear-gradient(135deg, var(--gold-light), var(--gold), #8a6820);
+  color: var(--mahogany);
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(201,168,76,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+.btn-gold:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(201,168,76,0.4), inset 0 1px 0 rgba(255,255,255,0.2); }
+.btn-gold:active { transform: translateY(0); }
+
+.card-shadow { box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3); }
+
+@keyframes pulse-gold {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201,168,76,0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(201,168,76,0); }
+}
+.pulse-gold { animation: pulse-gold 2s infinite; }
+
+@keyframes dice-roll {
+  0% { transform: rotate(0deg) scale(1); }
+  25% { transform: rotate(180deg) scale(1.2); }
+  50% { transform: rotate(360deg) scale(0.9); }
+  75% { transform: rotate(540deg) scale(1.1); }
+  100% { transform: rotate(720deg) scale(1); }
+}
+.dice-rolling { animation: dice-roll 0.6s ease-in-out; }
+
+@keyframes token-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.token-bounce { animation: token-bounce 0.4s ease-in-out; }
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.fade-in-up { animation: fade-in-up 0.4s ease-out forwards; }
+
+.scrollbar-thin::-webkit-scrollbar { width: 4px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
