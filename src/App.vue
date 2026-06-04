@@ -30,12 +30,19 @@
 
     <Modal />
     <SquareDetailModal :square="detailSquare" @close="detailSquare = null" />
+
+    <!-- Audio toggle -->
+    <button class="audio-toggle" @click="audio.toggleMute" :title="audio.muted.value ? '开启音效' : '关闭音效'">
+      <span v-if="audio.muted.value">🔇</span>
+      <span v-else>🔊</span>
+    </button>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { useGameStore } from './stores/game.js'
+import { useAudio } from './composables/useAudio.js'
 import PlayerSetup from './components/PlayerSetup.vue'
 import Board from './components/Board.vue'
 import PlayerPanel from './components/PlayerPanel.vue'
@@ -45,8 +52,24 @@ import Modal from './components/Modal.vue'
 import SquareDetailModal from './components/SquareDetailModal.vue'
 
 const store = useGameStore()
+const audio = useAudio()
 const detailSquare = ref(null)
 function openSquareDetail(sq) { detailSquare.value = sq }
+
+watch(() => store.phase, (p) => {
+  if (p === 'playing') audio.playBgm()
+  else audio.stopBgm()
+})
+
+watch(() => store.isRolling, (rolling) => {
+  if (rolling) { audio.playDice(); audio.duckBgm() }
+  else { audio.stopDice(); if (store.movingPlayerId === null) audio.restoreBgm() }
+})
+
+watch(() => store.movingPlayerId, (id) => {
+  if (id !== null) { audio.playTokenMove(); audio.duckBgm() }
+  else { audio.stopTokenMove(); if (!store.isRolling) audio.restoreBgm() }
+})
 
 function onKeydown(e) {
   if (store.phase !== 'playing' || store.modal || store.movingPlayerId !== null) return
@@ -148,4 +171,21 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 }
 .pp-label { font-size: 11px; color: rgba(245,234,213,0.5); font-family: 'Crimson Text', serif; }
 .pp-amount { font-family: 'Courier Prime', monospace; font-weight: 700; color: #c9a84c; font-size: 15px; }
+
+.audio-toggle {
+  position: fixed;
+  bottom: 14px; left: 14px;
+  z-index: 999;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(201,168,76,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.audio-toggle:hover { background: rgba(0,0,0,0.7); border-color: rgba(201,168,76,0.6); }
 </style>
