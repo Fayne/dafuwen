@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import {
-  BOARD_SIZES, COLOR_GROUPS, CHANCE_CARDS_TEMPLATE, COMMUNITY_CARDS_TEMPLATE,
-  RAILROAD_RENT, UTILITY_MULTIPLIER, STARTING_MONEY, GO_BONUS, JAIL_BAIL,
+  BOARD_SIZES, BOARD_STARTING_MONEY, COLOR_GROUPS,
+  CHANCE_CARDS_TEMPLATE, COMMUNITY_CARDS_TEMPLATE,
+  RAILROAD_RENT, UTILITY_MULTIPLIER, GO_BONUS, JAIL_BAIL,
   resolveCards
 } from '../data/boardData.js'
 
@@ -51,12 +52,13 @@ export const useGameStore = defineStore('game', () => {
   }
 
   // ── Init ───────────────────────────────────────────────────────────────────
-  function initGame(playerSetups, sizeKey = 'small') {
+  function initGame(playerSetups, sizeKey = 'small', startingMoney) {
     boardSizeKey.value = sizeKey
     const sq = BOARD_SIZES[sizeKey].squares
+    const money = startingMoney ?? BOARD_STARTING_MONEY[sizeKey] ?? 1500
     players.value = playerSetups.map((p, i) => ({
       id: i, name: p.name, token: p.token, color: p.color,
-      money: STARTING_MONEY, position: 0,
+      money, position: 0,
       inJail: false, jailTurns: 0, jailFreeCards: 0,
     }))
     properties.value    = {}

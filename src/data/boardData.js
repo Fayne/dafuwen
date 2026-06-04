@@ -249,6 +249,6 @@ export const PLAYER_COLOR_NAMES = ['红色', '蓝色', '绿色', '橙色', '紫�
 export const RAILROAD_RENT      = { 1: 25, 2: 50, 3: 100, 4: 200 }
 export const UTILITY_MULTIPLIER = { 1: 4,  2: 10 }
 
-export const STARTING_MONEY = 1500
+export const BOARD_STARTING_MONEY = { small: 1500, medium: 2000, large: 2500 }
 export const GO_BONUS       = 200
 export const JAIL_BAIL      = 50

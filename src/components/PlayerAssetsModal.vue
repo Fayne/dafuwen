@@ -91,6 +91,11 @@
             </div>
           </div>
 
+          <!-- Cheat: showmethemoney -->
+          <div v-if="showCheat" class="cheat-section">
+            <button @click="cheatAddMoney" class="cheat-btn">💰 注入资金</button>
+          </div>
+
         </div>
       </div>
     </Transition>
@@ -110,6 +115,29 @@ const store = useGameStore()
 const isBankrupt = computed(() =>
   propsData.player ? store.bankruptPlayers.includes(propsData.player.id) : false
 )
+
+const showCheat = computed(() => {
+  if (!propsData.player) return false
+  const params = new URLSearchParams(window.location.search)
+  const raw = params.get('showmethemoney')
+  if (raw === null) return false
+  const targetId = parseInt(raw) - 1  // serial number → 0-based id
+  return !isNaN(targetId) && targetId === propsData.player.id
+})
+
+function cheatAddMoney() {
+  const player = propsData.player
+  if (!player) return
+  const amount = prompt(`为 ${player.name} 增加多少资金？`, '1000')
+  if (amount === null) return
+  const num = parseInt(amount)
+  if (isNaN(num) || num <= 0) { alert('请输入有效金额'); return }
+  const p = store.players.find(p => p.id === player.id)
+  if (p && confirm(`确定给 ${player.name} 注入 $${num.toLocaleString()}？`)) {
+    p.money += num
+    store.log.unshift({ message: `🔧 后台注入：${player.name} 获得 $${num.toLocaleString()}`, type: 'money', id: Date.now() + Math.random() })
+  }
+}
 
 const props = computed(() =>
   propsData.player ? store.getPlayerProperties(propsData.player.id) : []
@@ -237,4 +265,25 @@ const netWorth = computed(() => {
 
 .assets-fade-enter-active, .assets-fade-leave-active { transition: all 0.22s cubic-bezier(0.34,1.56,0.64,1); }
 .assets-fade-enter-from, .assets-fade-leave-to { opacity: 0; transform: scale(0.9); }
+
+.cheat-section {
+  padding: 8px 16px 12px;
+  border-top: 1px dashed rgba(201,168,76,0.25);
+  flex-shrink: 0;
+}
+.cheat-btn {
+  width: 100%;
+  padding: 8px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #e2c06a, #c9a84c);
+  color: #2a1a0a;
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: none;
+  letter-spacing: 0.05em;
+}
+.cheat-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(201,168,76,0.4); }
 </style>
