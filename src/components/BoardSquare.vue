@@ -244,7 +244,15 @@ const groupColor = computed(() => COLOR_GROUPS[props.square.group]?.color ?? nul
   pointer-events: none;
   z-index: 7;
 }
-.orient-left  .tokens-wrap,
+.orient-top .tokens-wrap {
+  top: 1px; bottom: auto;
+}
+.orient-left .tokens-wrap {
+  left: 1px; right: auto;
+  top: 50%; bottom: auto;
+  transform: translateY(-50%);
+  flex-direction: column;
+}
 .orient-right .tokens-wrap {
   left: auto; bottom: auto;
   top: 50%; right: 1px;

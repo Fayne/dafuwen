@@ -29,6 +29,7 @@ export const useGameStore = defineStore('game', () => {
   const log                = ref([])
   const dice               = ref([1, 1])
   const isRolling          = ref(false)
+  const movingPlayerId     = ref(null)
   const hasRolledThisTurn  = ref(false)
   const doublesCount       = ref(0)
   const modal              = ref(null)
@@ -74,6 +75,7 @@ export const useGameStore = defineStore('game', () => {
     doublesCount.value  = 0
     modal.value         = null
     isRolling.value     = false
+    movingPlayerId.value = null
     phase.value         = 'playing'
     addLog('游戏开始！祝大家好运 🎲', 'system')
   }
@@ -119,14 +121,27 @@ export const useGameStore = defineStore('game', () => {
 
   function movePlayer(player, steps, isDoubles) {
     const total = totalSquares.value
-    const newPos = (player.position + steps) % total
-    if (newPos < player.position || player.position + steps >= total) {
-      player.money += GO_BONUS
-      addLog(`${player.name} 经过出发点，领取 $${GO_BONUS}！`, 'money')
-    }
-    player.position = newPos
+    const startPos = player.position
+    const endPos = (startPos + steps) % total
+    const passedGo = endPos < startPos || startPos + steps >= total
     hasRolledThisTurn.value = true
-    setTimeout(() => landOnSquare(player, squares.value[newPos], isDoubles), 400)
+    movingPlayerId.value = player.id
+    let step = 0
+    function doStep() {
+      step++
+      if (step > steps) {
+        movingPlayerId.value = null
+        if (passedGo) {
+          player.money += GO_BONUS
+          addLog(`${player.name} 经过出发点，领取 $${GO_BONUS}！`, 'money')
+        }
+        setTimeout(() => landOnSquare(player, squares.value[endPos], isDoubles), 350)
+        return
+      }
+      player.position = (player.position + 1) % total
+      setTimeout(doStep, 280)
+    }
+    doStep()
   }
 
   function landOnSquare(player, square, isDoubles) {
@@ -324,7 +339,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function endTurn() {
-    if (phase.value !== 'playing') return
+    if (phase.value !== 'playing' || movingPlayerId.value !== null) return
     modal.value = null; doublesCount.value = 0; hasRolledThisTurn.value = false
     let next = (currentPlayerIndex.value + 1) % players.value.length, tries = 0
     while (bankruptPlayers.value.includes(players.value[next].id) && tries < players.value.length) { next = (next + 1) % players.value.length; tries++ }
@@ -398,14 +413,14 @@ export const useGameStore = defineStore('game', () => {
     clearSave(); phase.value = 'setup'; players.value = []; properties.value = {}
     log.value = []; bankruptPlayers.value = []; modal.value = null; parkingPot.value = 0
     chanceDeck.value = []; communityDeck.value = []; chanceDiscard.value = []; communityDiscard.value = []
-    dice.value = [1,1]; hasRolledThisTurn.value = false; doublesCount.value = 0; currentPlayerIndex.value = 0
+    dice.value = [1,1]; hasRolledThisTurn.value = false; doublesCount.value = 0; currentPlayerIndex.value = 0; movingPlayerId.value = null
     boardSizeKey.value = 'small'
   }
 
   return {
     phase, boardSizeKey, boardConfig, squares, totalSquares, innerPerSide, jailPos,
     players, currentPlayerIndex, currentPlayer, activePlayers,
-    properties, dice, isRolling, hasRolledThisTurn, doublesCount,
+    properties, dice, isRolling, movingPlayerId, hasRolledThisTurn, doublesCount,
     modal, log, bankruptPlayers, parkingPot,
     initGame, rollDice, buyProperty, declineBuy, buildHouse, sellHouse,
     mortgageProperty, unmortgageProperty, sendToJail, endTurn, closeModal,

@@ -49,7 +49,7 @@ const detailSquare = ref(null)
 function openSquareDetail(sq) { detailSquare.value = sq }
 
 function onKeydown(e) {
-  if (store.phase !== 'playing' || store.modal) return
+  if (store.phase !== 'playing' || store.modal || store.movingPlayerId !== null) return
   if (e.code === 'Space' && !store.hasRolledThisTurn && !store.isRolling) {
     e.preventDefault()
     store.rollDice()
