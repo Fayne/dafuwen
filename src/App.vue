@@ -34,7 +34,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useGameStore } from './stores/game.js'
 import PlayerSetup from './components/PlayerSetup.vue'
 import Board from './components/Board.vue'
@@ -47,6 +47,21 @@ import SquareDetailModal from './components/SquareDetailModal.vue'
 const store = useGameStore()
 const detailSquare = ref(null)
 function openSquareDetail(sq) { detailSquare.value = sq }
+
+function onKeydown(e) {
+  if (store.phase !== 'playing' || store.modal) return
+  if (e.code === 'Space' && !store.hasRolledThisTurn && !store.isRolling) {
+    e.preventDefault()
+    store.rollDice()
+  }
+  if (e.code === 'Escape' && store.hasRolledThisTurn && !store.isRolling) {
+    e.preventDefault()
+    store.endTurn()
+  }
+}
+
+onMounted(() => window.addEventListener('keydown', onKeydown))
+onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <style scoped>

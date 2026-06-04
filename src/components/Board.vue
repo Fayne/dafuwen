@@ -1,99 +1,84 @@
 <template>
   <div class="board-wrapper">
-    <div class="board" ref="boardRef">
-      <!-- Corner squares -->
-      <div class="corner corner-br" style="grid-area: c0">
+    <div class="board" :style="gridStyle">
+
+      <!-- Corner 0: GO -->
+      <div class="corner" :style="{ gridArea: cornerArea(0) }">
         <div class="corner-inner">
           <div class="text-3xl">🏁</div>
-          <div class="corner-label">出发点</div>
-          <div class="corner-sublabel text-gold text-xs">领取 $200</div>
-          <div class="tokens-area">
-            <PlayerToken v-for="p in playersAt(0)" :key="p.id" :player="p" />
-          </div>
+          <div class="corner-label text-gold">出发点</div>
+          <div class="corner-sublabel">领取 $200</div>
+          <div class="corner-tokens"><PlayerToken v-for="p in playersAt(corners[0])" :key="p.id" :player="p"/></div>
         </div>
       </div>
 
-      <div class="corner corner-bl" style="grid-area: c10">
+      <!-- Corner 1: Jail -->
+      <div class="corner" :style="{ gridArea: cornerArea(1) }">
         <div class="corner-inner">
           <div class="text-3xl">🔒</div>
           <div class="corner-label">监狱</div>
-          <div class="corner-sublabel text-ivory/50 text-xs">探访 / 服刑</div>
-          <div class="tokens-area">
-            <PlayerToken v-for="p in playersAt(10)" :key="p.id" :player="p" />
-          </div>
+          <div class="corner-sublabel">探访 / 服刑</div>
+          <div class="corner-tokens"><PlayerToken v-for="p in playersAt(corners[1])" :key="p.id" :player="p"/></div>
         </div>
       </div>
 
-      <div class="corner corner-tl" style="grid-area: c20">
+      <!-- Corner 2: Free Parking -->
+      <div class="corner" :style="{ gridArea: cornerArea(2) }">
         <div class="corner-inner">
           <div class="text-3xl">🅿️</div>
           <div class="corner-label">免费停车</div>
-          <div class="corner-sublabel text-gold text-xs" v-if="store.parkingPot > 0">${{ store.parkingPot }}</div>
-          <div class="tokens-area">
-            <PlayerToken v-for="p in playersAt(20)" :key="p.id" :player="p" />
-          </div>
+          <div class="corner-sublabel text-gold" v-if="store.parkingPot > 0">${{ store.parkingPot }}</div>
+          <div class="corner-tokens"><PlayerToken v-for="p in playersAt(corners[2])" :key="p.id" :player="p"/></div>
         </div>
       </div>
 
-      <div class="corner corner-tr" style="grid-area: c30">
+      <!-- Corner 3: Go To Jail -->
+      <div class="corner" :style="{ gridArea: cornerArea(3) }">
         <div class="corner-inner">
           <div class="text-3xl">👮</div>
           <div class="corner-label">入狱</div>
-          <div class="corner-sublabel text-red-400 text-xs">直接前往</div>
-          <div class="tokens-area">
-            <PlayerToken v-for="p in playersAt(30)" :key="p.id" :player="p" />
-          </div>
+          <div class="corner-sublabel text-red-400">直接前往</div>
+          <div class="corner-tokens"><PlayerToken v-for="p in playersAt(corners[3])" :key="p.id" :player="p"/></div>
         </div>
       </div>
 
-      <!-- Bottom row: squares 1-9 -->
+      <!-- Bottom row squares -->
       <BoardSquare
-        v-for="id in bottomRow"
-        :key="id"
-        :square="SQUARES[id]"
-        :style="{ gridArea: `b${id}` }"
-        orientation="bottom"
-        :players="playersAt(id)"
+        v-for="id in bottomRow" :key="id"
+        :square="allSquares[id]" :style="{ gridArea: `b${id}` }"
+        orientation="bottom" :players="playersAt(id)"
         @squareClick="$emit('squareClick', $event)"
       />
 
-      <!-- Left column: squares 11-19 -->
+      <!-- Left column squares -->
       <BoardSquare
-        v-for="id in leftCol"
-        :key="id"
-        :square="SQUARES[id]"
-        :style="{ gridArea: `l${id}` }"
-        orientation="left"
-        :players="playersAt(id)"
+        v-for="id in leftCol" :key="id"
+        :square="allSquares[id]" :style="{ gridArea: `l${id}` }"
+        orientation="left" :players="playersAt(id)"
         @squareClick="$emit('squareClick', $event)"
       />
 
-      <!-- Top row: squares 21-29 -->
+      <!-- Top row squares -->
       <BoardSquare
-        v-for="id in topRow"
-        :key="id"
-        :square="SQUARES[id]"
-        :style="{ gridArea: `t${id}` }"
-        orientation="top"
-        :players="playersAt(id)"
+        v-for="id in topRow" :key="id"
+        :square="allSquares[id]" :style="{ gridArea: `t${id}` }"
+        orientation="top" :players="playersAt(id)"
         @squareClick="$emit('squareClick', $event)"
       />
 
-      <!-- Right column: squares 31-39 -->
+      <!-- Right column squares -->
       <BoardSquare
-        v-for="id in rightCol"
-        :key="id"
-        :square="SQUARES[id]"
-        :style="{ gridArea: `r${id}` }"
-        orientation="right"
-        :players="playersAt(id)"
+        v-for="id in rightCol" :key="id"
+        :square="allSquares[id]" :style="{ gridArea: `r${id}` }"
+        orientation="right" :players="playersAt(id)"
         @squareClick="$emit('squareClick', $event)"
       />
 
       <!-- Center panel -->
-      <div class="center-panel" style="grid-area: center">
+      <div class="center-panel" :style="{ gridArea: 'center' }">
         <slot />
       </div>
+
     </div>
   </div>
 </template>
@@ -101,24 +86,82 @@
 <script setup>
 import { computed } from 'vue'
 import { useGameStore } from '../stores/game.js'
-import { BOARD_SQUARES } from '../data/boardData.js'
 import BoardSquare from './BoardSquare.vue'
 import PlayerToken from './PlayerToken.vue'
 
 defineEmits(['squareClick'])
-
 const store = useGameStore()
-const SQUARES = BOARD_SQUARES
 
-const bottomRow = [1,2,3,4,5,6,7,8,9]
-const leftCol   = [11,12,13,14,15,16,17,18,19]
-const topRow    = [21,22,23,24,25,26,27,28,29]
-const rightCol  = [31,32,33,34,35,36,37,38,39]
+const allSquares   = computed(() => store.squares)
+const n            = computed(() => store.innerPerSide)   // inner squares per side
+const total        = computed(() => store.totalSquares)   // total squares
+
+// Corner IDs: [GO, Jail, Parking, GoToJail]
+const corners = computed(() => {
+  const s = n.value + 1  // side length = inner + 1 corner
+  return [0, s, s * 2, s * 3]
+})
+
+// Build the four inner ranges from the squares array
+const bottomRow = computed(() => {
+  const start = 1; const end = corners.value[1] - 1
+  return Array.from({ length: end - start + 1 }, (_, i) => start + i)
+})
+const leftCol = computed(() => {
+  const start = corners.value[1] + 1; const end = corners.value[2] - 1
+  return Array.from({ length: end - start + 1 }, (_, i) => start + i)
+})
+const topRow = computed(() => {
+  const start = corners.value[2] + 1; const end = corners.value[3] - 1
+  return Array.from({ length: end - start + 1 }, (_, i) => start + i)
+})
+const rightCol = computed(() => {
+  const start = corners.value[3] + 1; const end = total.value - 1
+  return Array.from({ length: end - start + 1 }, (_, i) => start + i)
+})
+
+// Build CSS grid-template-areas dynamically
+const gridStyle = computed(() => {
+  const inner = n.value
+  const cols  = inner + 2  // corner + inner + corner
+
+  // Row 1: top row  [c2, t(n+2)..t(2n), c3]  (left→right)
+  const topIds   = topRow.value
+  const leftIds  = [...leftCol.value].reverse()   // bottom→top when reading top-down
+  const bottomIds= [...bottomRow.value].reverse() // right→left
+  const rightIds = rightCol.value
+
+  // Build grid-template-areas string
+  // Row 0 (top): c2  t21..t29  c3
+  const row0 = `"${cornerArea(2)} ${topIds.map(i => `t${i}`).join(' ')} ${cornerArea(3)}"`
+  // Rows 1..n (middle): lN  center..center  rN
+  const midRows = leftIds.map((lid, i) => {
+    const rid = rightIds[i]
+    return `"l${lid} ${Array(inner).fill('center').join(' ')} r${rid}"`
+  })
+  // Last row (bottom): c1  b9..b1  c0
+  const lastRow = `"${cornerArea(1)} ${bottomIds.map(i => `b${i}`).join(' ')} ${cornerArea(0)}"`
+
+  const areas = [row0, ...midRows, lastRow].join('\n')
+
+  // Grid columns: corner-size, n×fr, corner-size
+  const cornerSize = '72px'
+  const gridCols = `${cornerSize} repeat(${inner}, 1fr) ${cornerSize}`
+  const gridRows = `${cornerSize} repeat(${inner}, 1fr) ${cornerSize}`
+
+  return {
+    gridTemplateAreas: areas,
+    gridTemplateColumns: gridCols,
+    gridTemplateRows: gridRows,
+  }
+})
+
+function cornerArea(idx) {
+  return ['c0', 'c1', 'c2', 'c3'][idx]
+}
 
 function playersAt(pos) {
-  return store.players.filter(p =>
-    p.position === pos && !store.bankruptPlayers.includes(p.id)
-  )
+  return store.players.filter(p => p.position === pos && !store.bankruptPlayers.includes(p.id))
 }
 </script>
 
@@ -133,28 +176,16 @@ function playersAt(pos) {
 
 .board {
   display: grid;
-  /* Fill available height (capped), keep square with aspect-ratio */
-  width: min(calc(100vh - 20px), calc(100vw - 450px), 800px);
-  height: min(calc(100vh - 20px), calc(100vw - 450px), 800px);
-  grid-template-columns: 80px repeat(9, 1fr) 80px;
-  grid-template-rows: 80px repeat(9, 1fr) 80px;
-  grid-template-areas:
-    "c20  t21  t22  t23  t24  t25  t26  t27  t28  t29  c30"
-    "l19  center center center center center center center center center r31"
-    "l18  center center center center center center center center center r32"
-    "l17  center center center center center center center center center r33"
-    "l16  center center center center center center center center center r34"
-    "l15  center center center center center center center center center r35"
-    "l14  center center center center center center center center center r36"
-    "l13  center center center center center center center center center r37"
-    "l12  center center center center center center center center center r38"
-    "l11  center center center center center center center center center r39"
-    "c10  b9   b8   b7   b6   b5   b4   b3   b2   b1   c0";
+  /* Size: fit the smaller of available height vs width, minus sidebars */
+  width:  min(calc(100vh - 24px), calc(100vw - 440px), 860px);
+  height: min(calc(100vh - 24px), calc(100vw - 440px), 860px);
   background: #1a3a2a;
   border: 3px solid #c9a84c;
-  box-shadow: 0 0 0 6px #3d1c0e, 0 8px 40px rgba(0,0,0,0.7), 0 0 0 8px #c9a84c50;
+  box-shadow: 0 0 0 6px #3d1c0e, 0 8px 40px rgba(0,0,0,0.7), 0 0 0 8px rgba(201,168,76,0.3);
+  flex-shrink: 0;
 }
 
+/* ── Corners ── */
 .corner {
   background: #0f2318;
   border: 1px solid rgba(201,168,76,0.3);
@@ -162,7 +193,6 @@ function playersAt(pos) {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  position: relative;
 }
 .corner-inner {
   display: flex;
@@ -179,18 +209,17 @@ function playersAt(pos) {
   text-align: center;
   line-height: 1.2;
 }
-.corner-sublabel {
-  font-size: 8px;
-  text-align: center;
-}
-.tokens-area {
+.corner-sublabel { font-size: 8px; color: rgba(245,234,213,0.5); text-align: center; }
+.corner-tokens {
   display: flex;
   flex-wrap: wrap;
   gap: 1px;
   justify-content: center;
-  max-width: 72px;
+  max-width: 68px;
+  margin-top: 2px;
 }
 
+/* ── Center panel ── */
 .center-panel {
   background: #1a3a2a;
   background-image: radial-gradient(ellipse at center, #234d38 0%, #1a3a2a 70%);
@@ -206,8 +235,8 @@ function playersAt(pos) {
   position: absolute;
   inset: 0;
   background-image:
-    repeating-linear-gradient(0deg, rgba(201,168,76,0.03) 0px, rgba(201,168,76,0.03) 1px, transparent 1px, transparent 40px),
-    repeating-linear-gradient(90deg, rgba(201,168,76,0.03) 0px, rgba(201,168,76,0.03) 1px, transparent 1px, transparent 40px);
+    repeating-linear-gradient(0deg,   rgba(201,168,76,0.03) 0, rgba(201,168,76,0.03) 1px, transparent 1px, transparent 40px),
+    repeating-linear-gradient(90deg,  rgba(201,168,76,0.03) 0, rgba(201,168,76,0.03) 1px, transparent 1px, transparent 40px);
   pointer-events: none;
 }
 </style>

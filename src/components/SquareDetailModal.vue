@@ -123,7 +123,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useGameStore } from '../stores/game.js'
-import { COLOR_GROUPS, BOARD_SQUARES } from '../data/boardData.js'
+import { COLOR_GROUPS } from '../data/boardData.js'
 
 const props = defineProps({ square: Object })
 defineEmits(['close'])
@@ -145,7 +145,7 @@ const groupRent = computed(() => {
 
 const hasMonopoly = computed(() => {
   if (!props.square?.group || !propData.value) return false
-  const groupSquares = BOARD_SQUARES.filter(s => s.group === props.square.group)
+  const groupSquares = store.squares.filter(s => s.group === props.square.group)
   return groupSquares.every(s => store.properties[s.id]?.ownerId === propData.value.ownerId)
 })
 

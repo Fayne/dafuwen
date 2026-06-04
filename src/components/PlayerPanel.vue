@@ -5,12 +5,13 @@
       <div
         v-for="player in store.players"
         :key="player.id"
-        class="player-card"
+        class="player-card clickable"
         :class="{
           'active-player': store.currentPlayer?.id === player.id && store.phase === 'playing',
           'bankrupt': store.bankruptPlayers.includes(player.id)
         }"
         :style="{ '--player-color': player.color }"
+        @click="selectedPlayer = player"
       >
         <div class="player-top">
           <div class="player-token-big">{{ player.token }}</div>
@@ -155,15 +156,19 @@
       >🔄 新开一盘</button>
     </div>
   </div>
+
+  <PlayerAssetsModal :player="selectedPlayer" @close="selectedPlayer = null" />
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { useGameStore } from '../stores/game.js'
-import { COLOR_GROUPS, BOARD_SQUARES } from '../data/boardData.js'
+import { COLOR_GROUPS } from '../data/boardData.js'
+import PlayerAssetsModal from './PlayerAssetsModal.vue'
 
 const store = useGameStore()
 const showManage = ref(false)
+const selectedPlayer = ref(null)
 
 function myProps(playerId) {
   return store.getPlayerProperties(playerId)
@@ -206,6 +211,8 @@ function confirmNewGame() {
   padding: 8px 10px;
   transition: all 0.2s;
 }
+.player-card.clickable { cursor: pointer; }
+.player-card.clickable:hover:not(.active-player) { border-color: rgba(201,168,76,0.35); }
 .active-player {
   border-color: var(--player-color) !important;
   background: rgba(0,0,0,0.4) !important;
