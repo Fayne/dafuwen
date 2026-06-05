@@ -167,29 +167,52 @@ export const useGameStore = defineStore('game', () => {
 
   function handlePropertyLanding(player, square) {
     const prop = properties.value[square.id]
-    if (!prop) { modal.value = { type: 'buy', square, player }; return }
-    if (prop.ownerId === player.id) { addLog(`${player.name} 落在自己地产`, 'info'); return }
-    if (prop.mortgaged) { addLog(`${square.name} 已抵押，无租金`, 'info'); return }
-    const owner = players.value[prop.ownerId]
-    if (bankruptPlayers.value.includes(owner.id)) return
+    if (!prop) {
+      // No owner — offer to buy
+      modal.value = { type: 'buy', square, playerId: player.id }
+      return
+    }
+    // Strict numeric comparison to avoid proxy/string type mismatches
+    const ownerId = Number(prop.ownerId)
+    if (ownerId === player.id) {
+      addLog(`${player.name} 落在自己地产`, 'info')
+      return
+    }
+    if (prop.mortgaged) {
+      addLog(`${square.name} 已抵押，无租金`, 'info')
+      return
+    }
+    const owner = players.value.find(p => p.id === ownerId)
+    if (!owner || bankruptPlayers.value.includes(ownerId)) return
     const rent = calculateRent(square, prop)
     addLog(`${player.name} 缴租 $${rent} 给 ${owner.name}`, 'pay')
-    player.money -= rent; owner.money += rent
+    player.money -= rent
+    owner.money  += rent
   }
 
   function calculateRent(square, prop) {
+    const ownerId = Number(prop.ownerId)
     if (square.type === 'railroad') {
-      const count = Object.keys(properties.value).filter(id => properties.value[id].ownerId === prop.ownerId && squares.value[parseInt(id)]?.type === 'railroad').length
+      const count = Object.keys(properties.value).filter(id =>
+        Number(properties.value[id].ownerId) === ownerId &&
+        squares.value[parseInt(id)]?.type === 'railroad'
+      ).length
       return RAILROAD_RENT[count] || 25
     }
     if (square.type === 'utility') {
-      const count = Object.keys(properties.value).filter(id => properties.value[id].ownerId === prop.ownerId && squares.value[parseInt(id)]?.type === 'utility').length
+      const count = Object.keys(properties.value).filter(id =>
+        Number(properties.value[id].ownerId) === ownerId &&
+        squares.value[parseInt(id)]?.type === 'utility'
+      ).length
       return (UTILITY_MULTIPLIER[count] || 4) * (dice.value[0] + dice.value[1])
     }
-    const group = COLOR_GROUPS[square.group]; if (!group) return 0
+    const group = COLOR_GROUPS[square.group]
+    if (!group) return 0
     const houses = prop.houses || 0
     if (houses === 0) {
-      const monopoly = squares.value.filter(s => s.group === square.group).every(s => properties.value[s.id]?.ownerId === prop.ownerId)
+      const monopoly = squares.value
+        .filter(s => s.group === square.group)
+        .every(s => Number(properties.value[s.id]?.ownerId) === ownerId)
       return monopoly ? group.rent[0] * 2 : group.rent[0]
     }
     return group.rent[Math.min(houses, 5)]
@@ -245,10 +268,15 @@ export const useGameStore = defineStore('game', () => {
     modal.value = null; checkBankruptcy(player)
   }
 
-  function buyProperty(player, square) {
+  function buyProperty(playerId, square) {
+    const player = players.value.find(p => p.id === playerId)
+    if (!player) { modal.value = null; return }
     if (player.money < square.price) { addLog('资金不足', 'error'); modal.value = null; return }
     player.money -= square.price
-    properties.value[square.id] = { ownerId: player.id, houses: 0, mortgaged: false }
+    properties.value = {
+      ...properties.value,
+      [square.id]: { ownerId: Number(player.id), houses: 0, mortgaged: false }
+    }
     addLog(`${player.name} 购买了 ${square.name}，花费 $${square.price}`, 'buy')
     modal.value = null
   }
@@ -258,10 +286,11 @@ export const useGameStore = defineStore('game', () => {
   function buildHouse(playerId, squareId) {
     const square = squares.value[squareId]
     const prop   = properties.value[squareId]
-    if (!prop || prop.ownerId !== playerId || !square?.group) return false
-    const player = players.value[playerId]
+    if (!prop || Number(prop.ownerId) !== playerId || !square?.group) return false
+    const player = players.value.find(p => p.id === playerId)
+    if (!player) return false
     const groupSquares = squares.value.filter(s => s.group === square.group)
-    if (!groupSquares.every(s => properties.value[s.id]?.ownerId === playerId)) { addLog('需要集齐同色地产', 'error'); return false }
+    if (!groupSquares.every(s => Number(properties.value[s.id]?.ownerId) === playerId)) { addLog('需要集齐同色地产', 'error'); return false }
     const houses = prop.houses || 0
     if (houses >= 5) { addLog('已达最大建筑', 'error'); return false }
     const minH = Math.min(...groupSquares.map(s => properties.value[s.id]?.houses || 0))
@@ -275,32 +304,38 @@ export const useGameStore = defineStore('game', () => {
   function sellHouse(playerId, squareId) {
     const square = squares.value[squareId]
     const prop   = properties.value[squareId]
-    if (!prop || prop.ownerId !== playerId || (prop.houses||0) <= 0) return false
+    if (!prop || Number(prop.ownerId) !== playerId || (prop.houses||0) <= 0) return false
+    const player = players.value.find(p => p.id === playerId)
+    if (!player) return false
     const refund = Math.floor(square.houseCost / 2)
-    prop.houses--; players.value[playerId].money += refund
-    addLog(`${players.value[playerId].name} 出售 ${square.name} 建筑，获 $${refund}`, 'sell')
+    prop.houses--; player.money += refund
+    addLog(`${player.name} 出售 ${square.name} 建筑，获 $${refund}`, 'sell')
     return true
   }
 
   function mortgageProperty(playerId, squareId) {
     const square = squares.value[squareId]
     const prop   = properties.value[squareId]
-    if (!prop || prop.ownerId !== playerId || prop.mortgaged) return false
+    if (!prop || Number(prop.ownerId) !== playerId || prop.mortgaged) return false
     if ((prop.houses||0) > 0) { addLog('请先拆除建筑', 'error'); return false }
+    const player = players.value.find(p => p.id === playerId)
+    if (!player) return false
     const mortgage = Math.floor(square.price / 2)
-    prop.mortgaged = true; players.value[playerId].money += mortgage
-    addLog(`${players.value[playerId].name} 抵押 ${square.name}，获 $${mortgage}`, 'mortgage')
+    prop.mortgaged = true; player.money += mortgage
+    addLog(`${player.name} 抵押 ${square.name}，获 $${mortgage}`, 'mortgage')
     return true
   }
 
   function unmortgageProperty(playerId, squareId) {
     const square = squares.value[squareId]
     const prop   = properties.value[squareId]
-    if (!prop || prop.ownerId !== playerId || !prop.mortgaged) return false
+    if (!prop || Number(prop.ownerId) !== playerId || !prop.mortgaged) return false
+    const player = players.value.find(p => p.id === playerId)
+    if (!player) return false
     const cost = Math.floor(square.price / 2 * 1.1)
-    if (players.value[playerId].money < cost) { addLog('资金不足', 'error'); return false }
-    players.value[playerId].money -= cost; prop.mortgaged = false
-    addLog(`${players.value[playerId].name} 解押 ${square.name}，花 $${cost}`, 'money')
+    if (player.money < cost) { addLog('资金不足', 'error'); return false }
+    player.money -= cost; prop.mortgaged = false
+    addLog(`${player.name} 解押 ${square.name}，花 $${cost}`, 'money')
     return true
   }
 
@@ -329,7 +364,9 @@ export const useGameStore = defineStore('game', () => {
   function declareBankruptcy(player) {
     if (bankruptPlayers.value.includes(player.id)) return
     bankruptPlayers.value.push(player.id)
-    Object.keys(properties.value).forEach(id => { if (properties.value[id].ownerId === player.id) delete properties.value[id] })
+    Object.keys(properties.value).forEach(id => {
+      if (Number(properties.value[id].ownerId) === player.id) delete properties.value[id]
+    })
     addLog(`💀 ${player.name} 破产退出！`, 'bankrupt')
     if (activePlayers.value.length === 1) {
       const winner = activePlayers.value[0]
@@ -351,13 +388,14 @@ export const useGameStore = defineStore('game', () => {
 
   function getPlayerProperties(playerId) {
     return Object.entries(properties.value)
-      .filter(([, p]) => p.ownerId === playerId)
+      .filter(([, p]) => Number(p.ownerId) === playerId)
       .map(([id, p]) => ({ ...squares.value[parseInt(id)], ...p, squareId: parseInt(id) }))
   }
 
   function getSquareOwner(squareId) {
-    const prop = properties.value[squareId]; if (!prop) return null
-    return players.value[prop.ownerId]
+    const prop = properties.value[squareId]
+    if (!prop) return null
+    return players.value.find(p => p.id === Number(prop.ownerId)) ?? null
   }
 
   // ── localStorage persistence ───────────────────────────────────────────────

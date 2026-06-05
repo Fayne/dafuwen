@@ -22,16 +22,16 @@
                 <span class="price-value text-sm">${{ baseRent }}</span>
               </div>
               <div class="price-row">
-                <span class="price-label">{{ store.modal.player.name }} 余额</span>
-                <span class="price-value" :class="store.modal.player.money < store.modal.square.price ? 'text-red-400' : 'text-green-400'">
-                  ${{ store.modal.player.money }}
+                <span class="price-label">{{ buyPlayer?.name }} 余额</span>
+                <span class="price-value" :class="buyPlayer?.money < store.modal.square.price ? 'text-red-400' : 'text-green-400'">
+                  ${{ buyPlayer?.money }}
                 </span>
               </div>
             </div>
             <div class="modal-actions">
               <button
-                @click="store.buyProperty(store.modal.player, store.modal.square)"
-                :disabled="store.modal.player.money < store.modal.square.price"
+                @click="store.buyProperty(store.modal.playerId, store.modal.square)"
+                :disabled="buyPlayer?.money < store.modal.square.price"
                 class="btn-gold px-6 py-3 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed"
               >购买</button>
               <button @click="store.declineBuy()" class="btn-secondary px-6 py-3 rounded-lg">放弃</button>
@@ -90,6 +90,12 @@ import { useGameStore } from '../stores/game.js'
 import { COLOR_GROUPS } from '../data/boardData.js'
 
 const store = useGameStore()
+
+// For buy modal: look up the buyer by id rather than holding a reactive reference
+const buyPlayer = computed(() => {
+  if (store.modal?.type !== 'buy') return null
+  return store.players.find(p => p.id === store.modal.playerId) ?? null
+})
 
 const groupColor = computed(() => {
   if (!store.modal?.square?.group) return null
