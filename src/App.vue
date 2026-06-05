@@ -254,7 +254,14 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
 <style scoped>
 .app-root { height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
-.app-root:has(.player-setup-scroll) { overflow-y: auto; }
+
+/* Setup screen: unlock height so content can scroll freely on any screen size */
+.app-root:has(.player-setup-scroll) {
+  height: auto;
+  min-height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
 
 /* ── DESKTOP (shown ≥768px, hidden on mobile) ── */
 .desktop-layout {

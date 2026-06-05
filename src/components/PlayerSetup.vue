@@ -118,7 +118,16 @@ function startGame() {
 </script>
 
 <style scoped>
-.setup-root { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; }
+.setup-root {
+  /* Natural flow — parent (app-root) now scrolls when needed */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;       /* vertically center on tall screens */
+  padding: 32px 16px 24px; /* generous top padding so title never gets clipped */
+  box-sizing: border-box;
+}
 .setup-card { width: 100%; max-width: 500px; background: #1a3a2a; border: 2px solid #c9a84c; border-radius: 16px; padding: 24px 24px 20px; box-shadow: 0 8px 40px rgba(0,0,0,0.6); }
 .continue-banner { background: rgba(0,0,0,0.3); border: 1px solid rgba(201,168,76,0.3); border-radius: 10px; padding: 12px 14px; margin-bottom: 16px; }
 .continue-info { display: flex; align-items: center; gap: 10px; }
