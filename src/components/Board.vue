@@ -145,7 +145,8 @@ const gridStyle = computed(() => {
   const areas = [row0, ...midRows, lastRow].join('\n')
 
   // Grid columns: corner-size, n×fr, corner-size
-  const cornerSize = '72px'
+  const isMobile = window.innerWidth < 768
+  const cornerSize = isMobile ? '56px' : '72px'
   const gridCols = `${cornerSize} repeat(${inner}, 1fr) ${cornerSize}`
   const gridRows = `${cornerSize} repeat(${inner}, 1fr) ${cornerSize}`
 
@@ -176,13 +177,22 @@ function playersAt(pos) {
 
 .board {
   display: grid;
-  /* Size: fit the smaller of available height vs width, minus sidebars */
+  /* Desktop: constrained by sidebars; Mobile: full viewport width */
   width:  min(calc(100vh - 24px), calc(100vw - 440px), 860px);
   height: min(calc(100vh - 24px), calc(100vw - 440px), 860px);
   background: #1a3a2a;
   border: 3px solid #c9a84c;
   box-shadow: 0 0 0 6px #3d1c0e, 0 8px 40px rgba(0,0,0,0.7), 0 0 0 8px rgba(201,168,76,0.3);
   flex-shrink: 0;
+}
+
+@media (max-width: 767px) {
+  .board {
+    width:  min(calc(100vw - 8px), calc(100vh - 120px));
+    height: min(calc(100vw - 8px), calc(100vh - 120px));
+  }
+  .corner-label   { font-size: 7px; }
+  .corner-sublabel{ font-size: 6px; }
 }
 
 /* ── Corners ── */
