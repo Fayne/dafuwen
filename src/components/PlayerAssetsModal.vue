@@ -5,7 +5,6 @@
         <div class="assets-box card-shadow">
           <button class="close-btn" @click="$emit('close')">✕</button>
 
-          <!-- Header -->
           <div class="assets-header" :style="{ borderBottomColor: player.color }">
             <div class="player-avatar" :style="{ borderColor: player.color }">{{ player.token }}</div>
             <div class="player-info">
@@ -15,61 +14,57 @@
               </div>
             </div>
             <div class="player-badges-col">
-              <span v-if="player.inJail" class="badge badge-jail">🔒 服刑中</span>
+              <span v-if="player.inJail" class="badge badge-jail">🔒 {{ isZh ? '服刑中' : 'In Jail' }}</span>
               <span v-if="player.jailFreeCards > 0" class="badge badge-free">🃏 ×{{ player.jailFreeCards }}</span>
-              <span v-if="isBankrupt" class="badge badge-bust">已破产</span>
+              <span v-if="isBankrupt" class="badge badge-bust">{{ isZh ? '已破产' : 'Bankrupt' }}</span>
             </div>
           </div>
 
-          <!-- Net worth -->
           <div class="net-worth-bar">
-            <span class="nw-label">净资产估值</span>
+            <span class="nw-label">{{ isZh ? '净资产估值' : 'Net Worth' }}</span>
             <span class="nw-value">${{ netWorth.toLocaleString() }}</span>
           </div>
 
-          <!-- Empty state -->
           <div v-if="!props.length" class="empty-state">
             <div class="text-3xl mb-2">🏜️</div>
-            <p>尚未拥有任何地产</p>
+            <p>{{ isZh ? '尚未拥有任何地产' : 'No properties yet' }}</p>
           </div>
 
-          <!-- Properties grouped by color -->
           <div v-else class="props-container scrollbar-thin">
             <div v-for="(group, groupKey) in groupedProps" :key="groupKey" class="prop-group">
-              <div class="group-header" :style="{ background: COLOR_GROUPS[groupKey]?.color + '22', borderLeftColor: COLOR_GROUPS[groupKey]?.color }">
-                <span class="group-dot" :style="{ background: COLOR_GROUPS[groupKey]?.color }"></span>
-                <span class="group-name">{{ COLOR_GROUPS[groupKey]?.name }}</span>
-                <span class="monopoly-badge" v-if="hasMonopoly(groupKey)">独占 ✓</span>
+              <div class="group-header" :style="{ background: currentGroups[groupKey]?.color + '22', borderLeftColor: currentGroups[groupKey]?.color }">
+                <span class="group-dot" :style="{ background: currentGroups[groupKey]?.color }"></span>
+                <span class="group-name">{{ currentGroups[groupKey]?.name }}</span>
+                <span class="monopoly-badge" v-if="hasMonopoly(groupKey)">{{ isZh ? '独占 ✓' : 'Monopoly ✓' }}</span>
               </div>
               <div class="prop-list">
                 <div v-for="prop in group" :key="prop.squareId" class="prop-item">
-                  <div class="prop-color-bar" :style="{ background: COLOR_GROUPS[groupKey]?.color }"></div>
+                  <div class="prop-color-bar" :style="{ background: currentGroups[groupKey]?.color }"></div>
                   <div class="prop-details">
                     <div class="prop-name">{{ prop.name }}</div>
                     <div class="prop-meta">
                       <span v-if="prop.type === 'property'">
-                        <span v-if="(prop.houses||0) >= 5">🏨 酒店</span>
+                        <span v-if="(prop.houses||0) >= 5">🏨 {{ isZh ? '酒店' : 'Hotel' }}</span>
                         <span v-else-if="(prop.houses||0) > 0">🏠 ×{{ prop.houses }}</span>
-                        <span v-else class="text-ivory/40">空地</span>
+                        <span v-else class="text-ivory/40">{{ isZh ? '空地' : 'Vacant' }}</span>
                       </span>
-                      <span v-else-if="prop.type === 'railroad'">🚂 铁路</span>
-                      <span v-else-if="prop.type === 'utility'">⚡ 公用</span>
-                      <span v-if="prop.mortgaged" class="mortgage-tag ml-1">抵押中</span>
+                      <span v-else-if="prop.type === 'railroad'">🚂 {{ isZh ? '铁路' : 'Railroad' }}</span>
+                      <span v-else-if="prop.type === 'utility'">⚡ {{ isZh ? '公用' : 'Utility' }}</span>
+                      <span v-if="prop.mortgaged" class="mortgage-tag ml-1">{{ isZh ? '抵押中' : 'Mortgaged' }}</span>
                     </div>
                   </div>
                   <div class="prop-value">
-                    <div class="text-xs text-ivory/50">价值</div>
+                    <div class="text-xs text-ivory/50">{{ isZh ? '价值' : 'Value' }}</div>
                     <div class="text-xs font-mono font-bold text-ivory/80">${{ prop.price }}</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Non-property assets (railroads, utilities) -->
             <div v-if="otherAssets.length" class="prop-group">
               <div class="group-header" style="border-left-color: #888; background: rgba(136,136,136,0.1)">
                 <span class="group-dot" style="background:#888"></span>
-                <span class="group-name">特殊资产</span>
+                <span class="group-name">{{ isZh ? '特殊资产' : 'Special Assets' }}</span>
               </div>
               <div class="prop-list">
                 <div v-for="prop in otherAssets" :key="prop.squareId" class="prop-item">
@@ -77,13 +72,13 @@
                   <div class="prop-details">
                     <div class="prop-name">{{ prop.name }}</div>
                     <div class="prop-meta">
-                      <span v-if="prop.type === 'railroad'">🚂 铁路站</span>
-                      <span v-else-if="prop.type === 'utility'">{{ prop.icon }} 公用事业</span>
-                      <span v-if="prop.mortgaged" class="mortgage-tag ml-1">抵押中</span>
+                      <span v-if="prop.type === 'railroad'">🚂 {{ isZh ? '铁路站' : 'Railroad' }}</span>
+                      <span v-else-if="prop.type === 'utility'">{{ prop.icon }} {{ isZh ? '公用事业' : 'Utility' }}</span>
+                      <span v-if="prop.mortgaged" class="mortgage-tag ml-1">{{ isZh ? '抵押中' : 'Mortgaged' }}</span>
                     </div>
                   </div>
                   <div class="prop-value">
-                    <div class="text-xs text-ivory/50">价值</div>
+                    <div class="text-xs text-ivory/50">{{ isZh ? '价值' : 'Value' }}</div>
                     <div class="text-xs font-mono font-bold text-ivory/80">${{ prop.price }}</div>
                   </div>
                 </div>
@@ -91,11 +86,9 @@
             </div>
           </div>
 
-          <!-- Cheat: showmethemoney -->
           <div v-if="showCheat" class="cheat-section">
-            <button @click="cheatAddMoney" class="cheat-btn">💰 注入资金</button>
+            <button @click="cheatAddMoney" class="cheat-btn">💰 {{ isZh ? '注入资金' : 'Add Funds' }}</button>
           </div>
-
         </div>
       </div>
     </Transition>
@@ -105,12 +98,16 @@
 <script setup>
 import { computed } from 'vue'
 import { useGameStore } from '../stores/game.js'
-import { COLOR_GROUPS } from '../data/boardData.js'
+import { useI18n } from '../composables/useI18n.js'
+import { COLOR_GROUPS, COLOR_GROUPS_EN } from '../data/boardData.js'
 
 const emit = defineEmits(['close'])
 const propsData = defineProps({ player: Object })
 
 const store = useGameStore()
+const { isZh } = useI18n()
+
+const currentGroups = computed(() => isZh.value ? COLOR_GROUPS : COLOR_GROUPS_EN)
 
 const isBankrupt = computed(() =>
   propsData.player ? store.bankruptPlayers.includes(propsData.player.id) : false
@@ -121,21 +118,29 @@ const showCheat = computed(() => {
   const params = new URLSearchParams(window.location.search)
   const raw = params.get('showmethemoney')
   if (raw === null) return false
-  const targetId = parseInt(raw) - 1  // serial number → 0-based id
+  const targetId = parseInt(raw) - 1
   return !isNaN(targetId) && targetId === propsData.player.id
 })
 
 function cheatAddMoney() {
   const player = propsData.player
   if (!player) return
-  const amount = prompt(`为 ${player.name} 增加多少资金？`, '1000')
+  const promptMsg = isZh.value ? `为 ${player.name} 增加多少资金？` : `Add how much money for ${player.name}?`
+  const amount = prompt(promptMsg, '1000')
   if (amount === null) return
   const num = parseInt(amount)
-  if (isNaN(num) || num <= 0) { alert('请输入有效金额'); return }
+  const invalidMsg = isZh.value ? '请输入有效金额' : 'Please enter a valid amount'
+  if (isNaN(num) || num <= 0) { alert(invalidMsg); return }
   const p = store.players.find(p => p.id === player.id)
-  if (p && confirm(`确定给 ${player.name} 注入 $${num.toLocaleString()}？`)) {
+  const confirmMsg = isZh.value
+    ? `确定给 ${player.name} 注入 $${num.toLocaleString()}？`
+    : `Add $${num.toLocaleString()} to ${player.name}?`
+  if (p && confirm(confirmMsg)) {
     p.money += num
-    store.log.unshift({ message: `🔧 后台注入：${player.name} 获得 $${num.toLocaleString()}`, type: 'money', id: Date.now() + Math.random() })
+    const logMsg = isZh.value
+      ? `🔧 后台注入：${player.name} 获得 $${num.toLocaleString()}`
+      : `🔧 Cheat: ${player.name} received $${num.toLocaleString()}`
+    store.log.unshift({ message: logMsg, type: 'money', id: Date.now() + Math.random() })
   }
 }
 
@@ -143,11 +148,9 @@ const props = computed(() =>
   propsData.player ? store.getPlayerProperties(propsData.player.id) : []
 )
 
-// Separate colored properties from railroads/utilities
 const coloredProps = computed(() => props.value.filter(p => p.group))
 const otherAssets  = computed(() => props.value.filter(p => !p.group && p.price))
 
-// Group by color
 const groupedProps = computed(() => {
   const g = {}
   coloredProps.value.forEach(p => {
@@ -175,41 +178,12 @@ const netWorth = computed(() => {
 </script>
 
 <style scoped>
-.assets-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.65);
-  backdrop-filter: blur(6px);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 300; padding: 16px;
-}
-.assets-box {
-  background: #1a3a2a;
-  border: 2px solid #c9a84c;
-  border-radius: 16px;
-  width: 100%; max-width: 400px;
-  max-height: 85vh;
-  display: flex; flex-direction: column;
-  overflow: hidden; position: relative;
-}
-.close-btn {
-  position: absolute; top: 10px; right: 12px;
-  color: rgba(245,234,213,0.5); font-size: 14px; z-index: 10; cursor: pointer;
-  background: rgba(0,0,0,0.3); border-radius: 50%; width: 24px; height: 24px;
-  display: flex; align-items: center; justify-content: center; transition: all 0.15s;
-}
+.assets-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.65); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; z-index: 300; padding: 16px; }
+.assets-box { background: #1a3a2a; border: 2px solid #c9a84c; border-radius: 16px; width: 100%; max-width: 400px; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+.close-btn { position: absolute; top: 10px; right: 12px; color: rgba(245,234,213,0.5); font-size: 14px; z-index: 10; cursor: pointer; background: rgba(0,0,0,0.3); border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
 .close-btn:hover { color: #f5ead5; background: rgba(0,0,0,0.5); }
-
-.assets-header {
-  display: flex; align-items: center; gap: 12px;
-  padding: 16px 44px 16px 16px;
-  border-bottom: 2px solid;
-  flex-shrink: 0;
-}
-.player-avatar {
-  width: 48px; height: 48px; border: 3px solid; border-radius: 50%;
-  background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;
-  font-size: 24px; flex-shrink: 0;
-}
+.assets-header { display: flex; align-items: center; gap: 12px; padding: 16px 44px 16px 16px; border-bottom: 2px solid; flex-shrink: 0; }
+.player-avatar { width: 48px; height: 48px; border: 3px solid; border-radius: 50%; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
 .player-info { flex: 1; min-width: 0; }
 .player-name  { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: #f5ead5; }
 .player-money { font-family: 'Courier Prime', monospace; font-size: 20px; font-weight: 700; }
@@ -218,43 +192,18 @@ const netWorth = computed(() => {
 .badge-jail { background: rgba(255,138,101,0.2); color: #ff8a65; }
 .badge-free { background: rgba(165,214,167,0.2); color: #a5d6a7; }
 .badge-bust { background: rgba(239,154,154,0.2); color: #ef9a9a; }
-
-.net-worth-bar {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 8px 16px; background: rgba(0,0,0,0.2); flex-shrink: 0;
-}
+.net-worth-bar { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; background: rgba(0,0,0,0.2); flex-shrink: 0; }
 .nw-label { font-family: 'Crimson Text', serif; color: rgba(245,234,213,0.5); font-size: 13px; }
 .nw-value { font-family: 'Courier Prime', monospace; font-weight: 700; color: #e2c06a; font-size: 16px; }
-
-.empty-state {
-  padding: 32px; text-align: center;
-  font-family: 'Crimson Text', serif; color: rgba(245,234,213,0.4); font-size: 16px;
-}
-
+.empty-state { padding: 32px; text-align: center; font-family: 'Crimson Text', serif; color: rgba(245,234,213,0.4); font-size: 16px; }
 .props-container { flex: 1; overflow-y: auto; padding: 8px 0; }
-
 .prop-group { margin-bottom: 8px; }
-.group-header {
-  display: flex; align-items: center; gap: 6px;
-  padding: 5px 12px; margin: 0 8px;
-  border-left: 3px solid; border-radius: 4px;
-  font-family: 'Playfair Display', serif; font-size: 12px;
-}
+.group-header { display: flex; align-items: center; gap: 6px; padding: 5px 12px; margin: 0 8px; border-left: 3px solid; border-radius: 4px; font-family: 'Playfair Display', serif; font-size: 12px; }
 .group-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .group-name { color: #f5ead5; font-weight: 600; flex: 1; }
-.monopoly-badge {
-  font-size: 10px; padding: 1px 5px;
-  background: rgba(201,168,76,0.2); color: #e2c06a;
-  border-radius: 4px;
-}
-
+.monopoly-badge { font-size: 10px; padding: 1px 5px; background: rgba(201,168,76,0.2); color: #e2c06a; border-radius: 4px; }
 .prop-list { padding: 4px 8px 0; display: flex; flex-direction: column; gap: 2px; }
-.prop-item {
-  display: flex; align-items: center; gap: 8px;
-  padding: 6px 8px; border-radius: 6px;
-  background: rgba(0,0,0,0.15);
-  transition: background 0.1s;
-}
+.prop-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; background: rgba(0,0,0,0.15); transition: background 0.1s; }
 .prop-item:hover { background: rgba(0,0,0,0.3); }
 .prop-color-bar { width: 4px; height: 28px; border-radius: 2px; flex-shrink: 0; }
 .prop-details { flex: 1; min-width: 0; }
@@ -262,28 +211,9 @@ const netWorth = computed(() => {
 .prop-meta { font-family: 'Crimson Text', serif; font-size: 12px; color: rgba(245,234,213,0.55); margin-top: 1px; }
 .mortgage-tag { font-size: 11px; padding: 0 4px; background: rgba(255,183,77,0.15); color: #ffb74d; border-radius: 3px; }
 .prop-value { text-align: right; flex-shrink: 0; }
-
 .assets-fade-enter-active, .assets-fade-leave-active { transition: all 0.22s cubic-bezier(0.34,1.56,0.64,1); }
 .assets-fade-enter-from, .assets-fade-leave-to { opacity: 0; transform: scale(0.9); }
-
-.cheat-section {
-  padding: 8px 16px 12px;
-  border-top: 1px dashed rgba(201,168,76,0.25);
-  flex-shrink: 0;
-}
-.cheat-btn {
-  width: 100%;
-  padding: 8px;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #e2c06a, #c9a84c);
-  color: #2a1a0a;
-  font-family: 'Playfair Display', serif;
-  font-weight: 700;
-  font-size: 13px;
-  cursor: pointer;
-  transition: all 0.15s;
-  border: none;
-  letter-spacing: 0.05em;
-}
+.cheat-section { padding: 8px 16px 12px; border-top: 1px dashed rgba(201,168,76,0.25); flex-shrink: 0; }
+.cheat-btn { width: 100%; padding: 8px; border-radius: 8px; background: linear-gradient(135deg, #e2c06a, #c9a84c); color: #2a1a0a; font-family: 'Playfair Display', serif; font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.15s; border: none; letter-spacing: 0.05em; }
 .cheat-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(201,168,76,0.4); }
 </style>

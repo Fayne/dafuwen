@@ -11,10 +11,10 @@
         <main class="board-area">
           <Board @squareClick="openSquareDetail">
             <div class="center-content">
-              <div class="title-text">大富翁</div>
+              <div class="title-text">{{ isZh ? '大富翁' : 'MONOPOLY' }}</div>
               <Dice />
               <div class="parking-pot" v-if="store.parkingPot > 0">
-                <span class="pp-label">停车奖金</span>
+                <span class="pp-label">{{ isZh ? '停车奖金' : 'Parking Bonus' }}</span>
                 <span class="pp-amount">${{ store.parkingPot }}</span>
               </div>
             </div>
@@ -33,7 +33,7 @@
         <div class="mobile-board-wrap">
           <Board @squareClick="openSquareDetail">
             <div class="mobile-center">
-              <div class="title-text-mobile">大富翁</div>
+              <div class="title-text-mobile">{{ isZh ? '大富翁' : 'MONOPOLY' }}</div>
               <Dice />
               <div class="parking-pot-sm" v-if="store.parkingPot > 0">🅿️ ${{ store.parkingPot }}</div>
             </div>
@@ -63,14 +63,14 @@
           <template v-if="store.currentPlayer.inJail">
             <button v-if="store.currentPlayer.jailFreeCards > 0"
               @click="store.useJailFreeCard(store.currentPlayer)"
-              class="mob-btn mob-btn-special">🃏 免费卡</button>
+              class="mob-btn mob-btn-special">🃏 {{ isZh ? '免费卡' : 'Free Card' }}</button>
             <button @click="store.payJailBail(store.currentPlayer)"
               :disabled="store.currentPlayer.money < 50"
-              class="mob-btn mob-btn-pay disabled:opacity-40">缴 $50</button>
+              class="mob-btn mob-btn-pay disabled:opacity-40">{{ isZh ? '缴 $50' : 'Pay $50' }}</button>
             <button @click="store.rollDice()"
               :disabled="store.hasRolledThisTurn || store.isRolling"
               class="mob-btn mob-btn-roll flex-1 disabled:opacity-40">
-              🎲 {{ store.isRolling ? '…' : '赌双数' }}
+              🎲 {{ store.isRolling ? '…' : (isZh ? '赌双数' : 'Roll Doubles') }}
             </button>
           </template>
           <!-- Normal mode -->
@@ -78,12 +78,12 @@
             <button @click="store.rollDice()"
               :disabled="store.hasRolledThisTurn || store.isRolling"
               class="mob-btn mob-btn-roll flex-1 disabled:opacity-40 disabled:cursor-not-allowed">
-              🎲 {{ store.isRolling ? '掷骰中…' : '掷骰子' }}
+              🎲 {{ store.isRolling ? '…' : (isZh ? '掷骰子' : 'Roll Dice') }}
             </button>
             <button @click="store.endTurn()"
               :disabled="!store.hasRolledThisTurn || store.isRolling"
               class="mob-btn mob-btn-end flex-1 disabled:opacity-40 disabled:cursor-not-allowed">
-              结束回合 →
+              {{ isZh ? '结束回合 →' : 'End Turn →' }}
             </button>
           </template>
           <!-- Manage button -->
@@ -95,7 +95,7 @@
           <div v-if="mobilePanel === 'players'" class="mobile-panel" @click.self="mobilePanel = null">
             <div class="panel-sheet">
               <div class="panel-handle"></div>
-              <div class="panel-title">玩家</div>
+              <div class="panel-title">{{ isZh ? '玩家' : 'Players' }}</div>
               <div class="panel-scroll">
                 <!-- Player cards (simplified for mobile) -->
                 <div v-for="player in store.players" :key="player.id"
@@ -114,7 +114,7 @@
                   <div class="mob-pbadges">
                     <span v-if="player.inJail" class="mob-badge jail">🔒</span>
                     <span v-if="player.jailFreeCards > 0" class="mob-badge free">🃏{{ player.jailFreeCards }}</span>
-                    <span v-if="store.bankruptPlayers.includes(player.id)" class="mob-badge bust">破产</span>
+                    <span v-if="store.bankruptPlayers.includes(player.id)" class="mob-badge bust">{{ isZh ? '破产' : 'BUST' }}</span>
                   </div>
                   <span class="mob-prop-count" v-if="store.getPlayerProperties(player.id).length">
                     🏠{{ store.getPlayerProperties(player.id).length }}
@@ -123,8 +123,8 @@
               </div>
               <!-- New game / bankrupt -->
               <div class="panel-footer">
-                <button @click="confirmBankrupt(); mobilePanel = null" class="panel-footer-btn danger">宣告破产</button>
-                <button @click="confirmNewGame(); mobilePanel = null" class="panel-footer-btn">🔄 新开一盘</button>
+                <button @click="confirmBankrupt(); mobilePanel = null" class="panel-footer-btn danger">{{ isZh ? '宣告破产' : 'Declare Bankrupt' }}</button>
+                <button @click="confirmNewGame(); mobilePanel = null" class="panel-footer-btn">🔄 {{ isZh ? '新开一盘' : 'New Game' }}</button>
               </div>
             </div>
           </div>
@@ -134,7 +134,7 @@
           <div v-if="mobilePanel === 'log'" class="mobile-panel" @click.self="mobilePanel = null">
             <div class="panel-sheet">
               <div class="panel-handle"></div>
-              <div class="panel-title">游戏日志</div>
+              <div class="panel-title">{{ isZh ? '游戏日志' : 'Game Log' }}</div>
               <div class="panel-scroll">
                 <GameLog />
               </div>
@@ -146,18 +146,18 @@
           <div v-if="mobilePanel === 'manage'" class="mobile-panel" @click.self="mobilePanel = null">
             <div class="panel-sheet">
               <div class="panel-handle"></div>
-              <div class="panel-title">管理地产 · {{ store.currentPlayer?.name }}</div>
+              <div class="panel-title">{{ isZh ? '管理地产' : 'Manage Properties' }} · {{ store.currentPlayer?.name }}</div>
               <div class="panel-scroll">
-                <div v-if="!currentProps.length" class="mob-empty">尚无地产</div>
+                <div v-if="!currentProps.length" class="mob-empty">{{ isZh ? '尚无地产' : 'No properties yet' }}</div>
                 <div v-for="prop in currentProps" :key="prop.squareId" class="mob-manage-row">
                   <span class="mob-color-dot" :style="{ background: propColor(prop) }"></span>
                   <div class="mob-manage-info">
                     <div class="mob-manage-name">{{ prop.name }}</div>
                     <div class="mob-manage-sub">
-                      <span v-if="(prop.houses||0) >= 5">🏨 酒店</span>
+                      <span v-if="(prop.houses||0) >= 5">🏨 {{ isZh ? '酒店' : 'Hotel' }}</span>
                       <span v-else-if="(prop.houses||0) > 0">🏠 ×{{ prop.houses }}</span>
-                      <span v-else class="text-ivory/40">空地</span>
-                      <span v-if="prop.mortgaged" class="mob-mortgage-tag ml-1">抵押中</span>
+                      <span v-else class="text-ivory/40">{{ isZh ? '空地' : 'Vacant' }}</span>
+                      <span v-if="prop.mortgaged" class="mob-mortgage-tag ml-1">{{ isZh ? '抵押中' : 'Mortgaged' }}</span>
                     </div>
                   </div>
                   <div class="mob-manage-btns">
@@ -169,10 +169,10 @@
                       class="mob-mini-btn sell">-🏠</button>
                     <button v-if="!prop.mortgaged && (prop.houses||0) === 0"
                       @click="store.mortgageProperty(store.currentPlayer.id, prop.squareId)"
-                      class="mob-mini-btn mortgage">抵押</button>
+                      class="mob-mini-btn mortgage">{{ isZh ? '抵押' : 'Mortgage' }}</button>
                     <button v-if="prop.mortgaged"
                       @click="store.unmortgageProperty(store.currentPlayer.id, prop.squareId)"
-                      class="mob-mini-btn unmortgage">解押</button>
+                      class="mob-mini-btn unmortgage">{{ isZh ? '解押' : 'Unmortgage' }}</button>
                   </div>
                 </div>
               </div>
@@ -187,7 +187,7 @@
     <PlayerAssetsModal :player="assetsPlayer" @close="assetsPlayer = null" />
 
     <!-- Audio toggle (shared) -->
-    <button class="audio-toggle" @click="audio.toggleMute" :title="audio.muted.value ? '开启音效' : '关闭音效'">
+    <button class="audio-toggle" @click="audio.toggleMute" :title="audio.muted.value ? (isZh ? '开启音效' : 'Unmute') : (isZh ? '关闭音效' : 'Mute')">
       <span v-if="audio.muted.value">🔇</span><span v-else>🔊</span>
     </button>
   </div>
@@ -197,7 +197,8 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useGameStore } from './stores/game.js'
 import { useAudio } from './composables/useAudio.js'
-import { COLOR_GROUPS } from './data/boardData.js'
+import { useI18n } from './composables/useI18n.js'
+import { COLOR_GROUPS, COLOR_GROUPS_EN } from './data/boardData.js'
 import PlayerSetup from './components/PlayerSetup.vue'
 import Board from './components/Board.vue'
 import PlayerPanel from './components/PlayerPanel.vue'
@@ -209,6 +210,7 @@ import PlayerAssetsModal from './components/PlayerAssetsModal.vue'
 
 const store = useGameStore()
 const audio = useAudio()
+const { isZh } = useI18n()
 const detailSquare = ref(null)
 const assetsPlayer = ref(null)
 const mobilePanel  = ref(null)
@@ -221,13 +223,20 @@ const currentProps = computed(() =>
 )
 function propColor(prop) {
   if (!prop.group) return '#888'
-  return COLOR_GROUPS[prop.group]?.color || '#888'
+  const groups = isZh.value ? COLOR_GROUPS : COLOR_GROUPS_EN
+  return groups[prop.group]?.color || '#888'
 }
 function confirmBankrupt() {
-  if (confirm(`确定让 ${store.currentPlayer?.name} 宣告破产？`)) store.declareBankruptcy(store.currentPlayer)
+  const msg = isZh.value
+    ? `确定让 ${store.currentPlayer?.name} 宣告破产？`
+    : `Declare ${store.currentPlayer?.name} bankrupt?`
+  if (confirm(msg)) store.declareBankruptcy(store.currentPlayer)
 }
 function confirmNewGame() {
-  if (confirm('放弃当前游戏并新开一盘？进度将被清除。')) store.resetGame()
+  const msg = isZh.value
+    ? '放弃当前游戏并新开一盘？进度将被清除。'
+    : 'Abandon current game and start a new one?'
+  if (confirm(msg)) store.resetGame()
 }
 
 // Close panel when modal opens

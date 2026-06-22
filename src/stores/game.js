@@ -3,9 +3,12 @@ import { ref, computed, watch } from 'vue'
 import {
   BOARD_SIZES, BOARD_STARTING_MONEY, COLOR_GROUPS,
   CHANCE_CARDS_TEMPLATE, COMMUNITY_CARDS_TEMPLATE,
+  BOARD_SIZES_EN, COLOR_GROUPS_EN,
+  CHANCE_CARDS_TEMPLATE_EN, COMMUNITY_CARDS_TEMPLATE_EN,
   RAILROAD_RENT, UTILITY_MULTIPLIER, GO_BONUS, JAIL_BAIL,
   resolveCards
 } from '../data/boardData.js'
+import { useI18n } from '../composables/useI18n.js'
 
 function shuffle(arr) {
   const a = [...arr]
@@ -17,6 +20,7 @@ function shuffle(arr) {
 }
 
 export const useGameStore = defineStore('game', () => {
+  const { lang } = useI18n()
   const phase              = ref('setup')
   const boardSizeKey       = ref('small')
   const players            = ref([])
@@ -37,8 +41,9 @@ export const useGameStore = defineStore('game', () => {
   const parkingPot         = ref(0)
 
   // ── Derived ────────────────────────────────────────────────────────────────
-  const boardConfig   = computed(() => BOARD_SIZES[boardSizeKey.value])
+  const boardConfig   = computed(() => (lang.value === 'zh' ? BOARD_SIZES : BOARD_SIZES_EN)[boardSizeKey.value])
   const squares       = computed(() => boardConfig.value.squares)
+  const colorGroups   = computed(() => lang.value === 'zh' ? COLOR_GROUPS : COLOR_GROUPS_EN)
   const totalSquares  = computed(() => squares.value.length)
   const innerPerSide  = computed(() => boardConfig.value.innerPerSide)
   const jailPos       = computed(() => boardConfig.value.jailPos)
@@ -63,8 +68,10 @@ export const useGameStore = defineStore('game', () => {
       inJail: false, jailTurns: 0, jailFreeCards: 0,
     }))
     properties.value    = {}
-    chanceDeck.value    = shuffle(resolveCards(CHANCE_CARDS_TEMPLATE, sq))
-    communityDeck.value = shuffle(resolveCards(COMMUNITY_CARDS_TEMPLATE, sq))
+    const chanceTemplate    = lang.value === 'zh' ? CHANCE_CARDS_TEMPLATE    : CHANCE_CARDS_TEMPLATE_EN
+    const communityTemplate = lang.value === 'zh' ? COMMUNITY_CARDS_TEMPLATE : COMMUNITY_CARDS_TEMPLATE_EN
+    chanceDeck.value    = shuffle(resolveCards(chanceTemplate, sq))
+    communityDeck.value = shuffle(resolveCards(communityTemplate, sq))
     chanceDiscard.value = []
     communityDiscard.value = []
     log.value           = []
@@ -77,7 +84,7 @@ export const useGameStore = defineStore('game', () => {
     isRolling.value     = false
     movingPlayerId.value = null
     phase.value         = 'playing'
-    addLog('游戏开始！祝大家好运 🎲', 'system')
+    addLog(lang.value === 'zh' ? '游戏开始！祝大家好运 🎲' : 'Game started! Good luck everyone 🎲', 'system')
   }
 
   // ── Dice ───────────────────────────────────────────────────────────────────
@@ -91,11 +98,11 @@ export const useGameStore = defineStore('game', () => {
     setTimeout(() => {
       isRolling.value = false
       const player = currentPlayer.value
-      addLog(`${player.name} 掷出 ${d1}+${d2}=${d1+d2}${isDoubles ? ' 【双数】' : ''}`, 'roll')
+      addLog(`${player.name} ${lang.value === 'zh' ? '掷出' : 'rolled'} ${d1}+${d2}=${d1+d2}${isDoubles ? (lang.value === 'zh' ? ' 【双数】' : ' [Doubles!]') : ''}`, 'roll')
       if (player.inJail) { handleJailRoll(player, d1, d2, isDoubles); return }
       if (isDoubles) {
         doublesCount.value++
-        if (doublesCount.value >= 3) { addLog(`${player.name} 连续三次双数，入狱！`, 'jail'); sendToJail(player); hasRolledThisTurn.value = true; return }
+        if (doublesCount.value >= 3) { addLog(`${player.name} ${lang.value === 'zh' ? '连续三次双数，入狱！' : 'rolled doubles 3 times, go to jail!'}`, 'jail'); sendToJail(player); hasRolledThisTurn.value = true; return }
       } else { doublesCount.value = 0 }
       movePlayer(player, d1 + d2, isDoubles)
     }, 700)
@@ -104,16 +111,16 @@ export const useGameStore = defineStore('game', () => {
   function handleJailRoll(player, d1, d2, isDoubles) {
     if (isDoubles) {
       player.inJail = false; player.jailTurns = 0
-      addLog(`${player.name} 掷出双数，出狱！`, 'success')
+      addLog(`${player.name} ${lang.value === 'zh' ? '掷出双数，出狱！' : 'rolled doubles, out of jail!'}`, 'success')
       movePlayer(player, d1 + d2, false)
     } else {
       player.jailTurns++
       if (player.jailTurns >= 3) {
         player.money -= JAIL_BAIL; player.inJail = false; player.jailTurns = 0
-        addLog(`${player.name} 服满3回合，缴 $${JAIL_BAIL} 出狱`, 'pay')
+        addLog(`${player.name} ${lang.value === 'zh' ? `服满3回合，缴 $${JAIL_BAIL} 出狱` : `served 3 turns, paid $${JAIL_BAIL} bail`}`, 'pay')
         movePlayer(player, d1 + d2, false)
       } else {
-        addLog(`${player.name} 未能出狱（第 ${player.jailTurns} 回合）`, 'info')
+        addLog(`${player.name} ${lang.value === 'zh' ? `未能出狱（第 ${player.jailTurns} 回合）` : `still in jail (turn ${player.jailTurns})`}`, 'info')
         hasRolledThisTurn.value = true
       }
     }
@@ -133,7 +140,7 @@ export const useGameStore = defineStore('game', () => {
         movingPlayerId.value = null
         if (passedGo) {
           player.money += GO_BONUS
-          addLog(`${player.name} 经过出发点，领取 $${GO_BONUS}！`, 'money')
+          addLog(`${player.name} ${lang.value === 'zh' ? `经过出发点，领取 $${GO_BONUS}！` : `passed GO, collected $${GO_BONUS}!`}`, 'money')
         }
         setTimeout(() => landOnSquare(player, squares.value[endPos], isDoubles), 350)
         return
@@ -145,7 +152,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function landOnSquare(player, square, isDoubles) {
-    addLog(`${player.name} 落在【${square.name}】`, 'move')
+    addLog(`${player.name} ${lang.value === 'zh' ? `落在【${square.name}】` : `landed on [${square.name}]`}`, 'move')
     switch (square.type) {
       case 'go': break
       case 'property': case 'railroad': case 'utility': handlePropertyLanding(player, square); break
@@ -155,13 +162,13 @@ export const useGameStore = defineStore('game', () => {
       case 'go_to_jail': sendToJail(player); break
       case 'parking':
         if (parkingPot.value > 0) {
-          addLog(`${player.name} 获得停车奖金 $${parkingPot.value}！`, 'success')
+          addLog(`${player.name} ${lang.value === 'zh' ? `获得停车奖金 $${parkingPot.value}！` : `collected parking bonus $${parkingPot.value}!`}`, 'success')
           player.money += parkingPot.value; parkingPot.value = 0
         }
         break
-      case 'jail': addLog(`${player.name} 只是探访监狱`, 'info'); break
+      case 'jail': addLog(`${player.name} ${lang.value === 'zh' ? '只是探访监狱' : 'is just visiting jail'}`, 'info'); break
     }
-    if (isDoubles && !player.inJail) { addLog(`${player.name} 双数，再掷一次！`, 'info'); hasRolledThisTurn.value = false }
+    if (isDoubles && !player.inJail) { addLog(`${player.name} ${lang.value === 'zh' ? '双数，再掷一次！' : 'doubles, roll again!'}`, 'info'); hasRolledThisTurn.value = false }
     checkBankruptcy(player)
   }
 
@@ -175,17 +182,17 @@ export const useGameStore = defineStore('game', () => {
     // Strict numeric comparison to avoid proxy/string type mismatches
     const ownerId = Number(prop.ownerId)
     if (ownerId === player.id) {
-      addLog(`${player.name} 落在自己地产`, 'info')
+      addLog(`${player.name} ${lang.value === 'zh' ? '落在自己地产' : 'landed on own property'}`, 'info')
       return
     }
     if (prop.mortgaged) {
-      addLog(`${square.name} 已抵押，无租金`, 'info')
+      addLog(`${square.name} ${lang.value === 'zh' ? '已抵押，无租金' : 'is mortgaged, no rent'}`, 'info')
       return
     }
     const owner = players.value.find(p => p.id === ownerId)
     if (!owner || bankruptPlayers.value.includes(ownerId)) return
     const rent = calculateRent(square, prop)
-    addLog(`${player.name} 缴租 $${rent} 给 ${owner.name}`, 'pay')
+    addLog(`${player.name} ${lang.value === 'zh' ? `缴租 $${rent} 给 ${owner.name}` : `paid rent $${rent} to ${owner.name}`}`, 'pay')
     player.money -= rent
     owner.money  += rent
   }
@@ -206,7 +213,7 @@ export const useGameStore = defineStore('game', () => {
       ).length
       return (UTILITY_MULTIPLIER[count] || 4) * (dice.value[0] + dice.value[1])
     }
-    const group = COLOR_GROUPS[square.group]
+    const group = colorGroups.value[square.group]
     if (!group) return 0
     const houses = prop.houses || 0
     if (houses === 0) {
@@ -219,7 +226,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function handleTax(player, square) {
-    addLog(`${player.name} 缴纳 ${square.name} $${square.amount}`, 'pay')
+    addLog(`${player.name} ${lang.value === 'zh' ? `缴纳 ${square.name} $${square.amount}` : `paid ${square.name} $${square.amount}`}`, 'pay')
     player.money -= square.amount; parkingPot.value += square.amount
   }
 
@@ -238,14 +245,14 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function executeCard(player, card) {
-    addLog(`${player.name} 抽到：${card.text}`, 'card')
+    addLog(`${player.name} ${lang.value === 'zh' ? `抽到：${card.text}` : `drew: ${card.text}`}`, 'card')
     switch (card.action) {
       case 'receive': player.money += card.amount; break
       case 'pay': player.money -= card.amount; parkingPot.value += card.amount; break
       case 'go_to_jail': modal.value = null; sendToJail(player); return
       case 'jail_free': player.jailFreeCards++; break
       case 'advance_to':
-        if (card.target < player.position) { player.money += GO_BONUS; addLog(`${player.name} 经过出发点，领取 $${GO_BONUS}`, 'money') }
+        if (card.target < player.position) { player.money += GO_BONUS; addLog(`${player.name} ${lang.value === 'zh' ? `经过出发点，领取 $${GO_BONUS}` : `passed GO, collected $${GO_BONUS}`}`, 'money') }
         player.position = card.target
         if (card.bonus) player.money += card.bonus
         modal.value = null
@@ -262,7 +269,7 @@ export const useGameStore = defineStore('game', () => {
       case 'repair':
         let total = 0
         Object.entries(properties.value).forEach(([, prop]) => { if (prop.ownerId === player.id) { const h = prop.houses||0; total += h >= 5 ? card.hotel : h * card.house } })
-        if (total > 0) { player.money -= total; addLog(`${player.name} 支付修缮费 $${total}`, 'pay') }
+        if (total > 0) { player.money -= total; addLog(`${player.name} ${lang.value === 'zh' ? `支付修缮费 $${total}` : `paid repair fees $${total}`}`, 'pay') }
         break
     }
     modal.value = null; checkBankruptcy(player)
@@ -271,13 +278,13 @@ export const useGameStore = defineStore('game', () => {
   function buyProperty(playerId, square) {
     const player = players.value.find(p => p.id === playerId)
     if (!player) { modal.value = null; return }
-    if (player.money < square.price) { addLog('资金不足', 'error'); modal.value = null; return }
+    if (player.money < square.price) { addLog(lang.value === 'zh' ? '资金不足' : 'Insufficient funds', 'error'); modal.value = null; return }
     player.money -= square.price
     properties.value = {
       ...properties.value,
       [square.id]: { ownerId: Number(player.id), houses: 0, mortgaged: false }
     }
-    addLog(`${player.name} 购买了 ${square.name}，花费 $${square.price}`, 'buy')
+    addLog(`${player.name} ${lang.value === 'zh' ? `购买了 ${square.name}，花费 $${square.price}` : `bought ${square.name} for $${square.price}`}`, 'buy')
     modal.value = null
   }
 
@@ -290,14 +297,14 @@ export const useGameStore = defineStore('game', () => {
     const player = players.value.find(p => p.id === playerId)
     if (!player) return false
     const groupSquares = squares.value.filter(s => s.group === square.group)
-    if (!groupSquares.every(s => Number(properties.value[s.id]?.ownerId) === playerId)) { addLog('需要集齐同色地产', 'error'); return false }
+    if (!groupSquares.every(s => Number(properties.value[s.id]?.ownerId) === playerId)) { addLog(lang.value === 'zh' ? '需要集齐同色地产' : 'Need full color group', 'error'); return false }
     const houses = prop.houses || 0
-    if (houses >= 5) { addLog('已达最大建筑', 'error'); return false }
+    if (houses >= 5) { addLog(lang.value === 'zh' ? '已达最大建筑' : 'Maximum buildings reached', 'error'); return false }
     const minH = Math.min(...groupSquares.map(s => properties.value[s.id]?.houses || 0))
-    if (houses > minH) { addLog('建筑需均匀分布', 'error'); return false }
-    if (player.money < square.houseCost) { addLog('资金不足', 'error'); return false }
+    if (houses > minH) { addLog(lang.value === 'zh' ? '建筑需均匀分布' : 'Build evenly across group', 'error'); return false }
+    if (player.money < square.houseCost) { addLog(lang.value === 'zh' ? '资金不足' : 'Insufficient funds', 'error'); return false }
     player.money -= square.houseCost; prop.houses = houses + 1
-    addLog(`${player.name} 在 ${square.name} 建${houses+1 >= 5 ? '酒店🏨' : '房🏠'}`, 'build')
+    addLog(`${player.name} ${lang.value === 'zh' ? `在 ${square.name} 建${houses+1 >= 5 ? '酒店🏨' : '房🏠'}` : `built a ${houses+1 >= 5 ? 'hotel🏨' : 'house🏠'} on ${square.name}`}`, 'build')
     return true
   }
 
@@ -309,7 +316,7 @@ export const useGameStore = defineStore('game', () => {
     if (!player) return false
     const refund = Math.floor(square.houseCost / 2)
     prop.houses--; player.money += refund
-    addLog(`${player.name} 出售 ${square.name} 建筑，获 $${refund}`, 'sell')
+    addLog(`${player.name} ${lang.value === 'zh' ? `出售 ${square.name} 建筑，获 $${refund}` : `sold building on ${square.name}, received $${refund}`}`, 'sell')
     return true
   }
 
@@ -317,12 +324,12 @@ export const useGameStore = defineStore('game', () => {
     const square = squares.value[squareId]
     const prop   = properties.value[squareId]
     if (!prop || Number(prop.ownerId) !== playerId || prop.mortgaged) return false
-    if ((prop.houses||0) > 0) { addLog('请先拆除建筑', 'error'); return false }
+    if ((prop.houses||0) > 0) { addLog(lang.value === 'zh' ? '请先拆除建筑' : 'Sell buildings first', 'error'); return false }
     const player = players.value.find(p => p.id === playerId)
     if (!player) return false
     const mortgage = Math.floor(square.price / 2)
     prop.mortgaged = true; player.money += mortgage
-    addLog(`${player.name} 抵押 ${square.name}，获 $${mortgage}`, 'mortgage')
+    addLog(`${player.name} ${lang.value === 'zh' ? `抵押 ${square.name}，获 $${mortgage}` : `mortgaged ${square.name}, received $${mortgage}`}`, 'mortgage')
     return true
   }
 
@@ -333,28 +340,28 @@ export const useGameStore = defineStore('game', () => {
     const player = players.value.find(p => p.id === playerId)
     if (!player) return false
     const cost = Math.floor(square.price / 2 * 1.1)
-    if (player.money < cost) { addLog('资金不足', 'error'); return false }
+    if (player.money < cost) { addLog(lang.value === 'zh' ? '资金不足' : 'Insufficient funds', 'error'); return false }
     player.money -= cost; prop.mortgaged = false
-    addLog(`${player.name} 解押 ${square.name}，花 $${cost}`, 'money')
+    addLog(`${player.name} ${lang.value === 'zh' ? `解押 ${square.name}，花 $${cost}` : `unmortgaged ${square.name} for $${cost}`}`, 'money')
     return true
   }
 
   function useJailFreeCard(player) {
     if (player.jailFreeCards <= 0) return false
     player.jailFreeCards--; player.inJail = false; player.jailTurns = 0
-    addLog(`${player.name} 使用出狱免费卡出狱！`, 'success'); return true
+    addLog(`${player.name} ${lang.value === 'zh' ? '使用出狱免费卡出狱！' : 'used Get Out of Jail Free card!'}`, 'success'); return true
   }
 
   function payJailBail(player) {
-    if (player.money < JAIL_BAIL) { addLog('资金不足', 'error'); return false }
+    if (player.money < JAIL_BAIL) { addLog(lang.value === 'zh' ? '资金不足' : 'Insufficient funds', 'error'); return false }
     player.money -= JAIL_BAIL; player.inJail = false; player.jailTurns = 0
-    addLog(`${player.name} 缴 $${JAIL_BAIL} 出狱`, 'pay'); return true
+    addLog(`${player.name} ${lang.value === 'zh' ? `缴 $${JAIL_BAIL} 出狱` : `paid $${JAIL_BAIL} bail`}`, 'pay'); return true
   }
 
   function sendToJail(player) {
     player.position = jailPos.value; player.inJail = true; player.jailTurns = 0
     doublesCount.value = 0; hasRolledThisTurn.value = true
-    addLog(`${player.name} 入狱！🔒`, 'jail')
+    addLog(`${player.name} ${lang.value === 'zh' ? '入狱！🔒' : 'went to jail! 🔒'}`, 'jail')
   }
 
   function checkBankruptcy(player) {
@@ -367,10 +374,10 @@ export const useGameStore = defineStore('game', () => {
     Object.keys(properties.value).forEach(id => {
       if (Number(properties.value[id].ownerId) === player.id) delete properties.value[id]
     })
-    addLog(`💀 ${player.name} 破产退出！`, 'bankrupt')
+    addLog(`💀 ${player.name} ${lang.value === 'zh' ? '破产退出！' : 'went bankrupt!'}`, 'bankrupt')
     if (activePlayers.value.length === 1) {
       const winner = activePlayers.value[0]
-      addLog(`🏆 ${winner.name} 获得最终胜利！`, 'win')
+      addLog(`🏆 ${winner.name} ${lang.value === 'zh' ? '获得最终胜利！' : 'wins the game!'}`, 'win')
       phase.value = 'ended'; modal.value = { type: 'winner', player: winner }
     } else { endTurn() }
   }
@@ -381,7 +388,7 @@ export const useGameStore = defineStore('game', () => {
     let next = (currentPlayerIndex.value + 1) % players.value.length, tries = 0
     while (bankruptPlayers.value.includes(players.value[next].id) && tries < players.value.length) { next = (next + 1) % players.value.length; tries++ }
     currentPlayerIndex.value = next
-    addLog(`── ${players.value[next].name} 的回合 ──`, 'turn')
+    addLog(`── ${players.value[next].name} ${lang.value === 'zh' ? '的回合' : "'s Turn"} ──`, 'turn')
   }
 
   function closeModal() { modal.value = null }

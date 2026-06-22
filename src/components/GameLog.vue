@@ -1,7 +1,7 @@
 <template>
   <div class="game-log">
     <div class="log-header">
-      <span class="font-display text-gold text-sm font-semibold tracking-wider">游戏日志</span>
+      <span class="font-display text-gold text-sm font-semibold tracking-wider">{{ isZh ? '游戏日志' : 'Game Log' }}</span>
     </div>
     <div class="log-body scrollbar-thin" ref="logBody">
       <TransitionGroup name="log-item">
@@ -21,7 +21,9 @@
 
 <script setup>
 import { useGameStore } from '../stores/game.js'
+import { useI18n } from '../composables/useI18n.js'
 const store = useGameStore()
+const { isZh } = useI18n()
 </script>
 
 <style scoped>
