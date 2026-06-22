@@ -6,8 +6,8 @@
       <div class="corner" :style="{ gridArea: cornerArea(0) }">
         <div class="corner-inner">
           <div class="text-3xl">🏁</div>
-          <div class="corner-label text-gold">出发点</div>
-          <div class="corner-sublabel">领取 $200</div>
+          <div class="corner-label text-gold">{{ isZh ? '出发点' : 'GO' }}</div>
+          <div class="corner-sublabel">{{ isZh ? '领取 $200' : 'Collect $200' }}</div>
           <div class="corner-tokens"><PlayerToken v-for="p in playersAt(corners[0])" :key="p.id" :player="p"/></div>
         </div>
       </div>
@@ -16,8 +16,8 @@
       <div class="corner" :style="{ gridArea: cornerArea(1) }">
         <div class="corner-inner">
           <div class="text-3xl">🔒</div>
-          <div class="corner-label">监狱</div>
-          <div class="corner-sublabel">探访 / 服刑</div>
+          <div class="corner-label">{{ isZh ? '监狱' : 'Jail' }}</div>
+          <div class="corner-sublabel">{{ isZh ? '探访 / 服刑' : 'Visit / Jail' }}</div>
           <div class="corner-tokens"><PlayerToken v-for="p in playersAt(corners[1])" :key="p.id" :player="p"/></div>
         </div>
       </div>
@@ -26,7 +26,7 @@
       <div class="corner" :style="{ gridArea: cornerArea(2) }">
         <div class="corner-inner">
           <div class="text-3xl">🅿️</div>
-          <div class="corner-label">免费停车</div>
+          <div class="corner-label">{{ isZh ? '免费停车' : 'Free Parking' }}</div>
           <div class="corner-sublabel text-gold" v-if="store.parkingPot > 0">${{ store.parkingPot }}</div>
           <div class="corner-tokens"><PlayerToken v-for="p in playersAt(corners[2])" :key="p.id" :player="p"/></div>
         </div>
@@ -36,8 +36,8 @@
       <div class="corner" :style="{ gridArea: cornerArea(3) }">
         <div class="corner-inner">
           <div class="text-3xl">👮</div>
-          <div class="corner-label">入狱</div>
-          <div class="corner-sublabel text-red-400">直接前往</div>
+          <div class="corner-label">{{ isZh ? '入狱' : 'Go To Jail' }}</div>
+          <div class="corner-sublabel text-red-400">{{ isZh ? '直接前往' : 'Go Directly' }}</div>
           <div class="corner-tokens"><PlayerToken v-for="p in playersAt(corners[3])" :key="p.id" :player="p"/></div>
         </div>
       </div>
@@ -86,11 +86,13 @@
 <script setup>
 import { computed } from 'vue'
 import { useGameStore } from '../stores/game.js'
+import { useI18n } from '../composables/useI18n.js'
 import BoardSquare from './BoardSquare.vue'
 import PlayerToken from './PlayerToken.vue'
 
 defineEmits(['squareClick'])
 const store = useGameStore()
+const { isZh } = useI18n()
 
 const allSquares   = computed(() => store.squares)
 const n            = computed(() => store.innerPerSide)   // inner squares per side

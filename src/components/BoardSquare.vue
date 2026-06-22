@@ -38,7 +38,7 @@
     <div v-if="owner" class="owner-dot" :style="{ background: owner.color }" :title="owner.name"></div>
 
     <!-- Mortgage overlay -->
-    <div v-if="propData?.mortgaged" class="mortgage-overlay">抵押</div>
+    <div v-if="propData?.mortgaged" class="mortgage-overlay">{{ isZh ? '抵押' : 'Mortgaged' }}</div>
 
     <!-- Player tokens -->
     <div class="tokens-wrap" v-if="players?.length">
@@ -50,16 +50,21 @@
 <script setup>
 import { computed } from 'vue'
 import { useGameStore } from '../stores/game.js'
-import { COLOR_GROUPS } from '../data/boardData.js'
+import { useI18n } from '../composables/useI18n.js'
+import { COLOR_GROUPS, COLOR_GROUPS_EN } from '../data/boardData.js'
 import PlayerToken from './PlayerToken.vue'
 
 defineEmits(['squareClick'])
 const props = defineProps({ square: Object, orientation: String, players: Array })
 
 const store    = useGameStore()
+const { isZh } = useI18n()
 const owner    = computed(() => store.getSquareOwner(props.square.id))
 const propData = computed(() => store.properties[props.square.id])
-const groupColor = computed(() => COLOR_GROUPS[props.square.group]?.color ?? null)
+const groupColor = computed(() => {
+  const groups = isZh.value ? COLOR_GROUPS : COLOR_GROUPS_EN
+  return groups[props.square.group]?.color ?? null
+})
 </script>
 
 <style scoped>
